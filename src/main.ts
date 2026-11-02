@@ -1,5 +1,5 @@
 import { bootstrapApplication } from '@angular/platform-browser';
-import { Component, signal } from '@angular/core';
+import { Component, OnDestroy, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 type Section = 'inicio' | 'acerca' | 'beneficios' | 'politicas' | 'establecimientos' | 'cuenta' | 'contacto';
@@ -7,12 +7,22 @@ type Section = 'inicio' | 'acerca' | 'beneficios' | 'politicas' | 'establecimien
 @Component({ selector: 'app-root', standalone: true, imports: [FormsModule], template: `
 <header class="top"><span>.:: STUDIO F ::. | 0.0.5</span><button class="login-link" (click)="navigate('cuenta')">Iniciar sesión</button></header>
 <div class="brand"><img src="./img/logo/logo_studiof.jpg" alt="STUDIO F"></div>
-<nav aria-label="Navegación principal"><button class="mobile-menu" (click)="toggleMenu()">☰ Menú</button><div class="nav-links" [class.open]="menuOpen()">
-@for (item of navigation; track item.id) { <button [class.active]="section() === item.id" (click)="navigate(item.id)">{{item.label}}</button> }
+<nav aria-label="Navegación principal"><div class="nav-links">
+@for (item of navigation; track item.id) { <button [class.active]="section() === item.id" [attr.aria-current]="section() === item.id ? 'page' : null" [attr.aria-label]="item.label" [title]="item.label" (click)="navigate(item.id)">
+@switch (item.id) {
+  @case ('inicio') { <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg> }
+  @case ('acerca') { <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8h.01"/></svg> }
+  @case ('beneficios') { <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M20 12v9H4v-9m-2-5h20v5H2zm10 0v14m0-14H8a3 3 0 1 1 3-3c0 3 1 3 1 3Zm0 0h4a3 3 0 1 0-3-3c0 3-1 3-1 3Z"/></svg> }
+  @case ('politicas') { <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6zM14 3v5h5M9 12h7m-7 4h7"/></svg> }
+  @case ('establecimientos') { <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg> }
+  @case ('cuenta') { <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg> }
+  @case ('contacto') { <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 3H4a1 1 0 0 0-1 1 17 17 0 0 0 17 17 1 1 0 0 0 1-1v-3l-5-2-2 3a14 14 0 0 1-5-3 14 14 0 0 1-3-5l3-2z"/></svg> }
+}
+<span class="nav-label">{{item.label}}</span></button> }
 </div></nav>
 <main>
 @if (section() === 'inicio') {
-  <section class="hero"><img [src]="slides[slide()]" alt="Colección STUDIO F"><button class="arrow prev" aria-label="Anterior" (click)="move(-1)">‹</button><button class="arrow next" aria-label="Siguiente" (click)="move(1)">›</button><div class="dots">@for (image of slides; track image; let i = $index) { <button [class.selected]="i === slide()" [attr.aria-label]="'Diapositiva ' + (i + 1)" (click)="slide.set(i)"></button> }</div></section>
+  <section class="hero" [class.controls-visible]="controlsVisible()" (click)="revealControls()"><img [src]="slides[slide()]" alt="Colección STUDIO F"><button class="arrow prev" aria-label="Anterior" (click)="move(-1)">‹</button><button class="arrow next" aria-label="Siguiente" (click)="move(1)">›</button><div class="dots">@for (image of slides; track image; let i = $index) { <button [class.selected]="i === slide()" [attr.aria-label]="'Diapositiva ' + (i + 1)" (click)="slide.set(i)"></button> }</div></section>
 } @else if (section() === 'cuenta') {
   <section class="panel account-panel"><p class="eyebrow">STUDIO F</p><h1>MI CUENTA</h1><p class="muted">Ingresa con los datos de tu cuenta de lealtad.</p><form class="account-form" (ngSubmit)="submitLogin()"><label for="username">Nombre de Usuario</label><input id="username" name="username" [(ngModel)]="username" maxlength="48" autocomplete="username" required autofocus><label for="password">Contraseña</label><input id="password" name="password" [(ngModel)]="password" type="password" maxlength="17" autocomplete="current-password" required><label class="remember"><input type="checkbox" name="remember" [(ngModel)]="remember">Recordar contraseña</label><button class="primary" type="submit">Enviar</button></form><p class="notice" aria-live="polite">{{accountNotice()}}</p><p class="backend">La cuenta se valida en el servidor original. El formulario local está listo, pero el servicio de autenticación no está disponible en esta migración.</p></section>
 } @else {
@@ -38,7 +48,7 @@ type Section = 'inicio' | 'acerca' | 'beneficios' | 'politicas' | 'establecimien
 </main>
 <footer><div><img src="./img/logo/logo_studiof_footer.jpg" alt="STUDIO F"><span>Todos los derechos reservados</span></div><img class="datacode" src="./img/DATACODE.png" alt="Datacode"></footer>
 ` })
-export class AppComponent {
+export class AppComponent implements OnDestroy {
   readonly navigation: { id: Section; label: string }[] = [
     { id: 'inicio', label: 'INICIO' }, { id: 'acerca', label: 'ACERCA DE' }, { id: 'beneficios', label: 'BENEFICIOS' }, { id: 'politicas', label: 'POLÍTICAS' }, { id: 'establecimientos', label: 'ESTABLECIMIENTOS' }, { id: 'cuenta', label: 'MI CUENTA' }, { id: 'contacto', label: 'CONTÁCTANOS' }
   ];
@@ -48,7 +58,7 @@ export class AppComponent {
   readonly slides = ['./img/slider/SLIDE4.png', './img/slider/SLIDE2.png', './img/slider/SLIDE3.png', './img/slider/SLIDE1.png'];
   readonly section = signal<Section>('inicio');
   readonly slide = signal(0);
-  readonly menuOpen = signal(false);
+  readonly controlsVisible = signal(false);
   readonly loading = signal(false);
   readonly sectionContent = signal('');
   readonly loadError = signal('');
@@ -64,13 +74,26 @@ export class AppComponent {
   contactCard = '';
   contactMessage = '';
   private contentRequest = 0;
+  private slideTimer?: number;
 
-  toggleMenu(): void { this.menuOpen.update(open => !open); }
+  constructor() {
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      this.slideTimer = window.setInterval(() => {
+        if (this.section() === 'inicio' && !document.hidden) this.move(1);
+      }, 5000);
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.slideTimer !== undefined) window.clearInterval(this.slideTimer);
+  }
+
+  revealControls(): void { this.controlsVisible.set(true); }
 
   async navigate(section: Section): Promise<void> {
     const requestId = ++this.contentRequest;
     this.section.set(section);
-    this.menuOpen.set(false);
+    if (section !== 'inicio') this.controlsVisible.set(false);
     this.sectionContent.set('');
     this.loadError.set('');
     this.accountNotice.set('');
