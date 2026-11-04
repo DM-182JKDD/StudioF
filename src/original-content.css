@@ -109,7 +109,7 @@
   height: auto;
   margin: 16px auto;
   border-radius: 18px;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .original-content .row {
@@ -209,11 +209,11 @@
 
 .original-content .acerca-media__img {
   width: 100%;
-  height: 100%;
+  height: auto;
   max-height: 600px;
   margin: 0;
   border-radius: 20px;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .original-content .acerca-beneficios {
@@ -272,9 +272,7 @@
 }
 
 .original-content .acerca-equal > [class*="col-"] .acerca-media__img {
-  height: clamp(360px, 34vw, 500px);
-  max-height: 500px;
-  object-fit: cover;
+  height: auto;
 }
 
 .original-content .newWhite .panel-boy > .row > [class*="col-"] {
@@ -287,11 +285,9 @@
 .original-content .newWhite .panel-boy > .row > [class*="col-"] > img {
   grid-column: 1;
   width: 100%;
-  height: clamp(240px, 28vw, 360px);
-  max-width: none;
+  height: auto;
   margin: 0;
-  object-fit: cover;
-  object-position: center;
+  object-fit: contain;
 }
 
 .original-content .newWhite .panel-boy > .row > [class*="col-"] > .panel-heading-LCM {
@@ -317,11 +313,9 @@
 
 .original-content .newWhite1 .panel-boy > .row > [class*="col-"] > img {
   width: 100%;
-  height: clamp(220px, 22vw, 300px);
-  max-width: none;
+  height: auto;
   margin: 0 0 28px;
-  object-fit: cover;
-  object-position: center 45%;
+  object-fit: contain;
 }
 
 .original-content .acerca-equal > [class*="col-"]:has(> div[style*="background-color"]) {
@@ -332,10 +326,10 @@
 
 .original-content .acerca-equal > [class*="col-"]:has(> div[style*="background-color"]) img {
   width: 100%;
-  height: 240px;
+  height: auto;
   margin: 0;
   border-radius: 0;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .original-content .acerca-equal > [class*="col-"] > div[style*="background-color"] {
@@ -386,24 +380,17 @@
 
 .original-content .estab-imgwrap {
   width: 100%;
-  height: 300px;
+  height: auto;
   flex: 0 0 auto;
-  overflow: hidden;
   background: #e8dfd3;
 }
 
 .original-content .estab-img {
   width: 100%;
-  height: 100%;
+  height: auto;
   margin: 0;
   border-radius: 0;
-  object-fit: cover;
-  object-position: center 35%;
-  transition: transform 350ms ease;
-}
-
-.original-content .estab-card:hover .estab-img {
-  transform: scale(1.035);
+  object-fit: contain;
 }
 
 .original-content .estab-body {
@@ -720,10 +707,6 @@
   .original-content .estab-grid {
     grid-template-columns: 1fr;
     gap: 18px;
-  }
-
-  .original-content .estab-imgwrap {
-    height: clamp(240px, 72vw, 380px);
   }
 
   .original-content .acerca-equal > [class*="col-"] > div[style*="background-color"] {

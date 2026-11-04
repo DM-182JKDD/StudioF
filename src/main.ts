@@ -24,7 +24,7 @@ type Section = 'inicio' | 'acerca' | 'beneficios' | 'politicas' | 'establecimien
 @if (section() === 'inicio') {
   <section class="hero" [class.controls-visible]="controlsVisible()" (click)="revealControls()"><img [src]="slides[slide()]" alt="Colección STUDIO F"><button class="arrow prev" aria-label="Anterior" (click)="move(-1)">‹</button><button class="arrow next" aria-label="Siguiente" (click)="move(1)">›</button><div class="dots">@for (image of slides; track image; let i = $index) { <button [class.selected]="i === slide()" [attr.aria-label]="'Diapositiva ' + (i + 1)" (click)="slide.set(i)"></button> }</div></section>
 } @else if (section() === 'cuenta') {
-  <section class="panel account-panel"><p class="eyebrow">STUDIO F</p><h1>MI CUENTA</h1><p class="muted">Ingresa con los datos de tu cuenta de lealtad.</p><form class="account-form" (ngSubmit)="submitLogin()"><label for="username">Nombre de Usuario</label><input id="username" name="username" [(ngModel)]="username" maxlength="48" autocomplete="username" required autofocus><label for="password">Contraseña</label><input id="password" name="password" [(ngModel)]="password" type="password" maxlength="17" autocomplete="current-password" required><label class="remember"><input type="checkbox" name="remember" [(ngModel)]="remember">Recordar contraseña</label><button class="primary" type="submit">Enviar</button></form><p class="notice" aria-live="polite">{{accountNotice()}}</p><p class="backend">La cuenta se valida en el servidor original. El formulario local está listo, pero el servicio de autenticación no está disponible en esta migración.</p></section>
+  <section class="panel account-panel"><p class="eyebrow">STUDIO F</p><h1>MI CUENTA</h1><p class="muted">Ingresa con los datos de tu cuenta de lealtad.</p><form class="account-form" (ngSubmit)="submitLogin()"><label for="username">Nombre de usuario</label><input id="username" name="username" [(ngModel)]="username" maxlength="48" autocomplete="username" required autofocus><label for="password">Contraseña</label><input id="password" name="password" [(ngModel)]="password" type="password" maxlength="17" autocomplete="current-password" required><label class="remember"><input type="checkbox" name="remember" [(ngModel)]="remember">Recordar contraseña</label><button class="primary" type="submit">Enviar</button></form><p class="notice" aria-live="polite">{{accountNotice()}}</p><p class="backend">La cuenta se valida en el servidor original. El formulario local está listo, pero el servicio de autenticación no está disponible en esta migración.</p></section>
 } @else {
   <section class="panel content original-content" aria-live="polite">
     @if (loading()) { <p class="muted">Cargando contenido…</p> }
@@ -36,13 +36,13 @@ type Section = 'inicio' | 'acerca' | 'beneficios' | 'politicas' | 'establecimien
           <label>Nombres<input name="contactName" [(ngModel)]="contactName" required autocomplete="given-name"></label>
           <label>Apellidos<input name="contactLastName" [(ngModel)]="contactLastName" required autocomplete="family-name"></label>
           <label>Teléfono<input name="contactPhone" [(ngModel)]="contactPhone" type="tel" autocomplete="tel"></label>
-          <label>E-Mail<input name="contactEmail" [(ngModel)]="contactEmail" type="email" required autocomplete="email"></label>
-          <label>No. Tarjeta Cliente<input name="contactCard" [(ngModel)]="contactCard"></label>
+          <label>Correo electrónico<input name="contactEmail" [(ngModel)]="contactEmail" type="email" required autocomplete="email"></label>
+          <label>N.º de tarjeta de cliente<input name="contactCard" [(ngModel)]="contactCard"></label>
           <label class="message-field">Mensaje<textarea name="contactMessage" [(ngModel)]="contactMessage" rows="4" required></textarea></label>
         </div><button class="primary" type="submit">Enviar</button><p class="notice" aria-live="polite">{{contactNotice()}}</p>
       </form>
     }
-    @if (section() === 'contacto') { <p class="backend">El formulario valida los campos en esta página, pero para enviar la consulta se necesita conectar el servicio original.</p> }
+    @if (section() === 'contacto') { <p class="backend">El formulario valida los campos en esta página, pero para enviar la consulta es necesario conectar el servicio original.</p> }
   </section>
 }
 </main>

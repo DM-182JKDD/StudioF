@@ -171,9 +171,7 @@ main {
   position: relative;
   overflow: hidden;
   isolation: isolate;
-  aspect-ratio: 2.25 / 1;
-  min-height: 280px;
-  max-height: 590px;
+  aspect-ratio: 16 / 9;
   border-radius: var(--radius-card);
   background: #e8dfd3;
   box-shadow: var(--shadow-soft);
@@ -197,7 +195,7 @@ main {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   object-position: center;
 }
 
@@ -540,8 +538,7 @@ footer .datacode {
 
   .hero {
     width: 100%;
-    aspect-ratio: 1.22 / 1;
-    min-height: 250px;
+    aspect-ratio: 16 / 9;
     border-radius: 18px;
   }
 
