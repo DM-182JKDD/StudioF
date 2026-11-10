@@ -30,7 +30,7 @@ type AccountSection = 'inicio' | 'puntos' | 'movimientos' | 'password' | 'profil
       <div class="account-dashboard">
         <div class="account-layout">
           <button class="account-menu-toggle" type="button" aria-controls="account-sections-menu" [attr.aria-expanded]="accountMenuOpen()" (click)="accountMenuOpen.set(true)">
-            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>Menú de cuenta
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>Menú
           </button>
           <button class="account-menu-backdrop" type="button" aria-label="Cerrar menú de cuenta" [class.account-backdrop-visible]="accountMenuOpen()" (click)="accountMenuOpen.set(false)"></button>
           <aside class="account-sidebar" [class.account-sidebar-open]="accountMenuOpen()" aria-label="Menú de cuenta">
