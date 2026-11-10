@@ -29,24 +29,35 @@ type AccountSection = 'inicio' | 'puntos' | 'movimientos' | 'password' | 'profil
   <section class="panel account-panel" [class.account-panel-wide]="accountUser()">
     @if (accountUser(); as account) {
       <div class="account-dashboard">
-        @if (account.isDemo) {
-          <div class="demo-banner" role="status"><strong>Modo demostración</strong><span>Datos de ejemplo; no corresponden a una cuenta real ni se guardan.</span></div>
-        }
         <div class="account-layout">
-          <aside class="account-sidebar" aria-label="Menú de cuenta">
-            <div class="account-sidebar-heading"><span class="eyebrow">CLUB STUDIO F</span><strong>MI CUENTA</strong></div>
-            <nav aria-label="Secciones de mi cuenta">
+          <button class="account-menu-toggle" type="button" aria-controls="account-sections-menu" [attr.aria-expanded]="accountMenuOpen()" (click)="accountMenuOpen.set(true)">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>Menú de cuenta
+          </button>
+          <button class="account-menu-backdrop" type="button" aria-label="Cerrar menú de cuenta" [class.account-backdrop-visible]="accountMenuOpen()" (click)="accountMenuOpen.set(false)"></button>
+          <aside class="account-sidebar" [class.account-sidebar-open]="accountMenuOpen()" aria-label="Menú de cuenta">
+            <div class="account-sidebar-heading"><span class="eyebrow">CLUB STUDIO F</span><strong>MI CUENTA</strong><button class="account-sidebar-close" type="button" aria-label="Cerrar menú de cuenta" (click)="accountMenuOpen.set(false)"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+            <nav id="account-sections-menu" aria-label="Secciones de mi cuenta">
               @for (item of visibleAccountNavigation(); track item.id) {
                 <button type="button" [class.active]="accountSection() === item.id" [attr.aria-current]="accountSection() === item.id ? 'page' : null" (click)="openAccountSection(item.id)">
-                  <span aria-hidden="true">{{item.icon}}</span>{{item.label}}
+                  <span class="account-nav-icon" aria-hidden="true">
+                    @switch (item.id) {
+                      @case ('inicio') { <svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg> }
+                      @case ('puntos') { <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v10m3-7.5c-.6-.9-1.6-1.3-3-1.3-1.7 0-2.7.8-2.7 1.9 0 3 5.4 1.2 5.4 4.1 0 1.2-1.1 2-2.9 2-1.4 0-2.5-.5-3.2-1.4"/></svg> }
+                      @case ('movimientos') { <svg viewBox="0 0 24 24"><path d="M4 7h15m0 0-4-4m4 4-4 4M20 17H5m0 0 4-4m-4 4 4 4"/></svg> }
+                      @case ('password') { <svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 4v3"/></svg> }
+                      @case ('profile') { <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg> }
+                      @case ('stores') { <svg viewBox="0 0 24 24"><path d="M3 10h18l-1.5-6h-15zM5 10v11h14V10m-9 11v-6h4v6M3 10a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0"/></svg> }
+                      @case ('rewards') { <svg viewBox="0 0 24 24"><path d="M12 3 14.8 9l6.2.7-4.6 4.2 1.3 6.1L12 16.8l-5.7 3.2 1.3-6.1L3 9.7 9.2 9z"/></svg> }
+                    }
+                  </span>{{item.label}}
                 </button>
               }
             </nav>
-            <button class="account-logout" type="button" (click)="logout()">Cerrar sesión</button>
+            <button class="account-logout" type="button" (click)="logout()"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M10 17l5-5-5-5m5 5H3m9-9h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7"/></svg>Cerrar sesión</button>
           </aside>
           <section class="account-main">
             <header class="account-page-heading"><div><p class="eyebrow">TU ESPACIO PERSONAL</p><h1>{{accountSectionTitle()}}</h1><p>Hola, <strong>{{account.name}}</strong></p></div>
-              @if (account.availableSections.includes('puntos') && account.points !== null) { <div class="account-points-pill"><span>Saldo disponible</span><strong>{{account.points}}@if (account.pointsUnit) { {{account.pointsUnit}} }</strong></div> }
+              @if (accountSection() !== 'inicio' && account.availableSections.includes('puntos') && account.points !== null) { <div class="account-points-pill"><span>Saldo disponible</span><strong>{{account.points}}@if (account.pointsUnit) { {{account.pointsUnit}} }</strong></div> }
             </header>
             @switch (accountSection()) {
               @case ('inicio') {
@@ -155,14 +166,14 @@ export class AppComponent implements OnDestroy {
     acerca: 'acerca', beneficios: 'politicas', politicas: 'condiciones', establecimientos: 'establecimientos', contacto: 'contacto'
   };
   readonly slides = ['./img/slider/SLIDE4.png', './img/slider/SLIDE2.png', './img/slider/SLIDE3.png', './img/slider/SLIDE1.png'];
-  readonly accountNavigation: { id: AccountSection; label: string; icon: string }[] = [
-    { id: 'inicio', label: 'Inicio', icon: '⌂' },
-    { id: 'puntos', label: 'Mis puntos', icon: '☆' },
-    { id: 'movimientos', label: 'Mis movimientos', icon: '↔' },
-    { id: 'password', label: 'Cambiar contraseña', icon: '◇' },
-    { id: 'profile', label: 'Actualizar datos', icon: '○' },
-    { id: 'stores', label: 'Establecimientos', icon: '⌖' },
-    { id: 'rewards', label: 'Beneficios y premios', icon: '☆' }
+  readonly accountNavigation: { id: AccountSection; label: string }[] = [
+    { id: 'inicio', label: 'Inicio' },
+    { id: 'puntos', label: 'Mis puntos' },
+    { id: 'movimientos', label: 'Mis movimientos' },
+    { id: 'password', label: 'Cambiar contraseña' },
+    { id: 'profile', label: 'Actualizar datos' },
+    { id: 'stores', label: 'Establecimientos' },
+    { id: 'rewards', label: 'Beneficios y premios' }
   ];
   readonly section = signal<Section>('inicio');
   readonly slide = signal(0);
@@ -173,6 +184,7 @@ export class AppComponent implements OnDestroy {
   readonly accountNotice = signal('');
   readonly accountUser = signal<{ name: string; points: string | null; pointsUnit: string | null; pointsNotice: string | null; availableSections: AccountSection[]; isDemo: boolean } | null>(null);
   readonly accountSection = signal<AccountSection>('inicio');
+  readonly accountMenuOpen = signal(false);
   readonly accountFeedback = signal('');
   movementFrom = '';
   movementTo = '';
@@ -296,6 +308,7 @@ export class AppComponent implements OnDestroy {
     this.accountNotice.set('');
     this.password = '';
     this.accountSection.set('inicio');
+    this.accountMenuOpen.set(false);
     this.accountFeedback.set('');
     this.resetDemoData();
     this.accountUser.set({
@@ -309,6 +322,7 @@ export class AppComponent implements OnDestroy {
   }
 
   logout(): void {
+    this.accountMenuOpen.set(false);
     this.accountUser.set(null);
     this.accountSection.set('inicio');
     this.accountFeedback.set('');
@@ -337,6 +351,7 @@ export class AppComponent implements OnDestroy {
     if (!account?.availableSections.includes(section)) return;
     this.accountSection.set(section);
     this.accountFeedback.set('');
+    this.accountMenuOpen.set(false);
   }
 
   accountSectionTitle(): string {
