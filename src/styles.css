@@ -384,7 +384,25 @@ main {
   box-shadow: 0 8px 20px rgb(76 14 29 / 18%);
 }
 
+.primary:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.account-result {
+  margin-top: 24px;
+  line-height: 1.7;
+}
+
+.account-points {
+  padding: 18px;
+  border-radius: var(--radius-control);
+  background: var(--color-cream);
+  font-size: 18px;
+}
+
 .panel > .primary,
+.account-result > .primary,
 .account-form > .primary {
   width: 100%;
   margin-top: 22px;

@@ -24,7 +24,24 @@ type Section = 'inicio' | 'acerca' | 'beneficios' | 'politicas' | 'establecimien
 @if (section() === 'inicio') {
   <section class="hero" [class.controls-visible]="controlsVisible()" (click)="revealControls()"><img [src]="slides[slide()]" alt="Colección STUDIO F"><button class="arrow prev" aria-label="Anterior" (click)="move(-1)">‹</button><button class="arrow next" aria-label="Siguiente" (click)="move(1)">›</button><div class="dots">@for (image of slides; track image; let i = $index) { <button [class.selected]="i === slide()" [attr.aria-label]="'Diapositiva ' + (i + 1)" (click)="slide.set(i)"></button> }</div></section>
 } @else if (section() === 'cuenta') {
-  <section class="panel account-panel"><p class="eyebrow">STUDIO F</p><h1>MI CUENTA</h1><p class="muted">Ingresa con los datos de tu cuenta de lealtad.</p><form class="account-form" (ngSubmit)="submitLogin()"><label for="username">Nombre de usuario</label><input id="username" name="username" [(ngModel)]="username" maxlength="48" autocomplete="username" required autofocus><label for="password">Contraseña</label><input id="password" name="password" [(ngModel)]="password" type="password" maxlength="17" autocomplete="current-password" required><label class="remember"><input type="checkbox" name="remember" [(ngModel)]="remember">Recordar contraseña</label><button class="primary" type="submit">Enviar</button></form><p class="notice" aria-live="polite">{{accountNotice()}}</p><p class="backend">La cuenta se valida en el servidor original. El formulario local está listo, pero el servicio de autenticación no está disponible en esta migración.</p></section>
+  <section class="panel account-panel"><p class="eyebrow">STUDIO F</p><h1>MI CUENTA</h1>
+    @if (accountUser(); as account) {
+      <div class="account-result" aria-live="polite">
+        <p>Bienvenido, <strong>{{account.name}}</strong>.</p>
+        @if (account.points) { <p class="account-points">Saldo: <strong>{{account.points}}</strong> {{account.pointsUnit}}</p> }
+        @if (account.pointsNotice) { <p class="backend">{{account.pointsNotice}}</p> }
+        <button class="primary" type="button" (click)="logout()">Cerrar sesión</button>
+      </div>
+    } @else {
+      <p class="muted">Ingresa con los datos de tu cuenta de lealtad.</p>
+      <form class="account-form" (ngSubmit)="submitLogin()" [attr.aria-busy]="loginPending()">
+        <label for="username">Nombre de usuario</label><input id="username" name="username" [(ngModel)]="username" maxlength="48" autocomplete="username" required autofocus [disabled]="loginPending()">
+        <label for="password">Contraseña</label><input id="password" name="password" [(ngModel)]="password" type="password" maxlength="17" autocomplete="current-password" required [disabled]="loginPending()">
+        <button class="primary" type="submit" [disabled]="loginPending()">{{loginPending() ? 'Validando…' : 'Enviar'}}</button>
+      </form>
+      <p class="notice" role="status" aria-live="polite">{{accountNotice()}}</p>
+    }
+  </section>
 } @else {
   <section class="panel content original-content" aria-live="polite">
     @if (loading()) { <p class="muted">Cargando contenido…</p> }
@@ -63,10 +80,11 @@ export class AppComponent implements OnDestroy {
   readonly sectionContent = signal('');
   readonly loadError = signal('');
   readonly accountNotice = signal('');
+  readonly accountUser = signal<{ name: string; points: string | null; pointsUnit: string | null; pointsNotice: string | null } | null>(null);
+  readonly loginPending = signal(false);
   readonly contactNotice = signal('');
   username = '';
   password = '';
-  remember = false;
   contactName = '';
   contactLastName = '';
   contactPhone = '';
@@ -119,7 +137,51 @@ export class AppComponent implements OnDestroy {
   }
 
   move(direction: number): void { this.slide.update(index => (index + direction + this.slides.length) % this.slides.length); }
-  submitLogin(): void { this.accountNotice.set('Los campos están completos. Para validar la cuenta se requiere el servicio de autenticación original.'); }
+  async submitLogin(): Promise<void> {
+    this.loginPending.set(true);
+    this.accountNotice.set('');
+    try {
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: this.username, password: this.password })
+      });
+      const payload: unknown = await response.json();
+      if (!response.ok) {
+        const message = this.isRecord(payload) && typeof payload['message'] === 'string'
+          ? payload['message']
+          : 'No fue posible validar la cuenta.';
+        this.accountNotice.set(message);
+        return;
+      }
+      if (!this.isRecord(payload) || typeof payload['name'] !== 'string') {
+        throw new Error('La respuesta del servicio no tiene el formato esperado.');
+      }
+      this.accountUser.set({
+        name: payload['name'],
+        points: typeof payload['points'] === 'string' ? payload['points'] : null,
+        pointsUnit: typeof payload['pointsUnit'] === 'string' ? payload['pointsUnit'] : null,
+        pointsNotice: typeof payload['pointsNotice'] === 'string' ? payload['pointsNotice'] : null
+      });
+      this.password = '';
+    } catch (error) {
+      console.error('Error al iniciar sesión:', error);
+      this.accountNotice.set('No fue posible conectar con el servicio de autenticación. Inténtalo nuevamente.');
+    } finally {
+      this.loginPending.set(false);
+    }
+  }
+
+  logout(): void {
+    this.accountUser.set(null);
+    this.username = '';
+    this.password = '';
+    this.accountNotice.set('');
+  }
+
+  private isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null;
+  }
   submitContact(): void { this.contactNotice.set('Los campos son válidos. La consulta no se envió porque el servicio original no está conectado.'); }
 }
 

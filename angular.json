@@ -15,8 +15,11 @@
           "configurations": { "production": { "outputHashing": "all", "optimization": true, "sourceMap": false }, "development": { "optimization": false, "extractLicenses": false, "sourceMap": true } },
           "defaultConfiguration": "production"
         },
-        "serve": { "builder": "@angular/build:dev-server", "configurations": { "production": { "buildTarget": "studiof-lealtad:build:production" }, "development": { "buildTarget": "studiof-lealtad:build:development" } }, "defaultConfiguration": "development" }
+        "serve": { "builder": "@angular/build:dev-server", "options": { "proxyConfig": "proxy.conf.json" }, "configurations": { "production": { "buildTarget": "studiof-lealtad:build:production" }, "development": { "buildTarget": "studiof-lealtad:build:development" } }, "defaultConfiguration": "development" }
       }
     }
+  },
+  "cli": {
+    "analytics": "4cd3ab27-c13e-435d-8ef5-70b84ea0d6ff"
   }
 }
