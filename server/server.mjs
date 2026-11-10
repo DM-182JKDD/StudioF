@@ -230,22 +230,25 @@ async function login(request, response) {
   const pointsUnit = unitResult.status === 'fulfilled'
     ? field(unitResult.value, 'UNI_NOMBRE')
     : null;
-  const pointsUnavailable = points === null || pointsUnit === null;
+  const pointsUnavailable = points === null;
+  const pointsUnitUnavailable = pointsUnit === null;
 
-  if (pointsUnavailable) {
-    const failedOperation = pointsResult.status === 'rejected' || points === null
-      ? 'w_validaciones'
-      : 'w_validacionesempresa';
-    const error = pointsResult.status === 'rejected'
-      ? pointsResult.reason
-      : unitResult.status === 'rejected' ? unitResult.reason : 'Falta un dato de puntos.';
-    console.error(`Error al consultar ${failedOperation}:`, error);
+  if (pointsUnavailable || pointsUnitUnavailable) {
+    if (pointsUnavailable) {
+      const error = pointsResult.status === 'rejected' ? pointsResult.reason : 'Falta TCM_FINAL.';
+      console.error('Error al consultar w_validaciones:', error);
+    }
+    if (pointsUnitUnavailable) {
+      const error = unitResult.status === 'rejected' ? unitResult.reason : 'Falta UNI_NOMBRE.';
+      console.error('Error al consultar w_validacionesempresa:', error);
+    }
   }
 
   sendJson(response, 200, {
     name: displayName,
     points,
     pointsUnit,
+    availableSections: ['inicio', ...(points !== null ? ['puntos'] : [])],
     pointsNotice: pointsUnavailable ? 'No fue posible consultar el saldo de puntos.' : null
   });
 }
