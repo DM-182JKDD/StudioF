@@ -1,10 +1,12 @@
 import { bootstrapApplication } from '@angular/platform-browser';
+import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 type Section = 'inicio' | 'acerca' | 'beneficios' | 'politicas' | 'establecimientos' | 'cuenta' | 'contacto';
+type AccountSection = 'inicio' | 'puntos' | 'movimientos' | 'password' | 'profile' | 'stores' | 'rewards';
 
-@Component({ selector: 'app-root', standalone: true, imports: [FormsModule], template: `
+@Component({ selector: 'app-root', standalone: true, imports: [CommonModule, FormsModule], template: `
 <header class="top"><span>.:: STUDIO F ::. | 0.0.5</span><button class="login-link" (click)="navigate('cuenta')">Iniciar sesión</button></header>
 <div class="brand"><img src="./img/logo/logo_studiof.jpg" alt="STUDIO F"></div>
 <nav aria-label="Navegación principal"><div class="nav-links">
@@ -24,23 +26,103 @@ type Section = 'inicio' | 'acerca' | 'beneficios' | 'politicas' | 'establecimien
 @if (section() === 'inicio') {
   <section class="hero" [class.controls-visible]="controlsVisible()" (click)="revealControls()"><img [src]="slides[slide()]" alt="Colección STUDIO F"><button class="arrow prev" aria-label="Anterior" (click)="move(-1)">‹</button><button class="arrow next" aria-label="Siguiente" (click)="move(1)">›</button><div class="dots">@for (image of slides; track image; let i = $index) { <button [class.selected]="i === slide()" [attr.aria-label]="'Diapositiva ' + (i + 1)" (click)="slide.set(i)"></button> }</div></section>
 } @else if (section() === 'cuenta') {
-  <section class="panel account-panel"><p class="eyebrow">STUDIO F</p><h1>MI CUENTA</h1>
+  <section class="panel account-panel" [class.account-panel-wide]="accountUser()">
     @if (accountUser(); as account) {
-      <div class="account-result" aria-live="polite">
-        <p>Bienvenido, <strong>{{account.name}}</strong>.</p>
-        @if (account.points) { <p class="account-points">Saldo: <strong>{{account.points}}</strong> {{account.pointsUnit}}</p> }
-        @if (account.pointsNotice) { <p class="backend">{{account.pointsNotice}}</p> }
-        <button class="primary" type="button" (click)="logout()">Cerrar sesión</button>
+      <div class="account-dashboard">
+        @if (account.isDemo) {
+          <div class="demo-banner" role="status"><strong>Modo demostración</strong><span>Datos de ejemplo; no corresponden a una cuenta real ni se guardan.</span></div>
+        }
+        <div class="account-layout">
+          <aside class="account-sidebar" aria-label="Menú de cuenta">
+            <div class="account-sidebar-heading"><span class="eyebrow">CLUB STUDIO F</span><strong>MI CUENTA</strong></div>
+            <nav aria-label="Secciones de mi cuenta">
+              @for (item of visibleAccountNavigation(); track item.id) {
+                <button type="button" [class.active]="accountSection() === item.id" [attr.aria-current]="accountSection() === item.id ? 'page' : null" (click)="openAccountSection(item.id)">
+                  <span aria-hidden="true">{{item.icon}}</span>{{item.label}}
+                </button>
+              }
+            </nav>
+            <button class="account-logout" type="button" (click)="logout()">Cerrar sesión</button>
+          </aside>
+          <section class="account-main">
+            <header class="account-page-heading"><div><p class="eyebrow">TU ESPACIO PERSONAL</p><h1>{{accountSectionTitle()}}</h1><p>Hola, <strong>{{account.name}}</strong></p></div>
+              @if (account.availableSections.includes('puntos') && account.points !== null) { <div class="account-points-pill"><span>Saldo disponible</span><strong>{{account.points}}@if (account.pointsUnit) { {{account.pointsUnit}} }</strong></div> }
+            </header>
+            @switch (accountSection()) {
+              @case ('inicio') {
+                @if (account.isDemo) {
+                  <div class="account-overview">
+                    <article class="points-card"><span>CLUB STUDIO F</span><p>Tu saldo disponible</p><strong>{{account.points ?? '—'}}</strong><span>{{account.points ? account.pointsUnit : 'Puntos'}}</span></article>
+                    <article class="account-info-card"><h2>Datos de tu cuenta</h2>
+                      <p>Nombre <strong>{{account.name}}</strong></p><p>Correo <strong>{{demoProfile.email}}</strong></p><p>Tarjeta <strong>•••• 4821</strong></p>
+                      <small>Información ficticia de demostración.</small>
+                    </article>
+                  </div>
+                  <section class="account-data-card"><div class="account-card-heading"><h2>Movimientos recientes</h2><button class="text-button" type="button" (click)="openAccountSection('movimientos')">Ver todos</button></div><ng-container *ngTemplateOutlet="movementTable"></ng-container></section>
+                } @else if (account.availableSections.includes('puntos') && account.points !== null) {
+                  <section class="account-data-card points-result"><p class="account-description">Saldo de puntos devuelto por el servicio.</p><div class="points-card"><span>CLUB STUDIO F</span><p>Tu saldo disponible</p><strong>{{account.points}}</strong>@if (account.pointsUnit) { <span>{{account.pointsUnit}}</span> }</div></section>
+                }
+              }
+              @case ('puntos') {
+                @if (account.availableSections.includes('puntos') && account.points !== null) {
+                  <section class="account-data-card points-result"><div class="points-card"><span>CLUB STUDIO F</span><p>Tu saldo disponible</p><strong>{{account.points}}</strong>@if (account.pointsUnit) { <span>{{account.pointsUnit}}</span> }</div></section>
+                }
+              }
+              @case ('movimientos') {
+                <section class="account-data-card">
+                  <p class="account-description">Consulta las transacciones asociadas a tu cuenta.</p>
+                  @if (account.isDemo) {
+                    <form class="movement-filters" (ngSubmit)="applyMovementFilter()"><label>Desde<input name="movementFrom" type="date" [(ngModel)]="movementFrom"></label><label>Hasta<input name="movementTo" type="date" [(ngModel)]="movementTo"></label><button class="primary" type="submit">Filtrar</button><button class="text-button" type="button" (click)="clearMovementFilter()">Limpiar</button></form>
+                    <ng-container *ngTemplateOutlet="movementTable"></ng-container>
+                  }
+                </section>
+              }
+              @case ('password') {
+                <section class="account-data-card"><h2>Cambiar contraseña</h2>
+                  <p class="account-unavailable">{{account.isDemo ? 'Vista de demostración: el formulario no cambia ni envía contraseñas.' : 'El servicio actual no ofrece una operación para cambiar la contraseña.'}}</p>
+                  @if (account.isDemo) {
+                    <form class="account-edit-form" (ngSubmit)="submitDemoPassword()"><label>Contraseña actual<input name="oldPassword" type="password" autocomplete="off" required></label><label>Nueva contraseña<input name="newPassword" type="password" autocomplete="off" required></label><label>Confirmar contraseña<input name="confirmPassword" type="password" autocomplete="off" required></label><button class="primary" type="submit">Guardar</button></form>
+                    <p class="notice" role="status">{{accountFeedback()}}</p>
+                  }
+                </section>
+              }
+              @case ('profile') {
+                <section class="account-data-card"><h2>Actualizar mis datos</h2>
+                  @if (account.isDemo) {
+                    <p class="account-unavailable">Datos ficticios: puedes explorar el formulario, pero los cambios no se envían a ningún servicio.</p>
+                    <form class="account-edit-form" (ngSubmit)="submitDemoProfile()"><label>Nombre<input name="demoFirstName" [(ngModel)]="demoProfile.firstName" required></label><label>Apellido<input name="demoLastName" [(ngModel)]="demoProfile.lastName" required></label><label>Dirección<input name="demoAddress" [(ngModel)]="demoProfile.address"></label><label>Teléfono<input name="demoPhone" [(ngModel)]="demoProfile.phone"></label><label>Teléfono móvil<input name="demoMobile" [(ngModel)]="demoProfile.mobile"></label><label>Correo electrónico<input name="demoEmail" type="email" [(ngModel)]="demoProfile.email" required></label><button class="primary" type="submit">Guardar</button></form>
+                    <p class="notice" role="status">{{accountFeedback()}}</p>
+                  }
+                </section>
+              }
+              @case ('stores') { @if (account.isDemo) { <section class="account-data-card"><h2>Establecimientos</h2><p class="account-unavailable">Consulta los establecimientos desde la sección pública de Studio F.</p><button class="secondary-button" type="button" (click)="navigate('establecimientos')">Ver establecimientos</button></section> } }
+              @case ('rewards') {
+                @if (account.isDemo) { <section class="account-data-card"><h2>Beneficios y premios</h2><p class="account-unavailable">Esta demostración no incluye premios configurados.</p><button class="secondary-button" type="button" (click)="navigate('beneficios')">Conocer beneficios</button></section> }
+              }
+            }
+          </section>
+          <ng-template #movementTable>
+            <div class="account-table-wrap"><table class="account-table"><thead><tr><th>Descripción</th><th>Fecha</th><th>Establecimiento</th><th>Cargo</th><th>Abono</th><th>Saldo</th></tr></thead><tbody>
+              @for (movement of filteredMovements(); track movement.date + movement.description) {
+                <tr><td>{{movement.description}}</td><td>{{movement.date}}</td><td>{{movement.store}}</td><td>{{movement.charge}}</td><td>{{movement.credit}}</td><td>{{movement.balance}}</td></tr>
+              } @empty { <tr><td colspan="6">No hay movimientos en el rango seleccionado.</td></tr> }
+            </tbody></table></div>
+          </ng-template>
+        </div>
       </div>
     } @else {
-      <p class="muted">Ingresa con los datos de tu cuenta de lealtad.</p>
-      <form class="account-form" (ngSubmit)="submitLogin()" [attr.aria-busy]="loginPending()">
-        <label for="username">Nombre de usuario</label><input id="username" name="username" [(ngModel)]="username" maxlength="48" autocomplete="username" required autofocus [disabled]="loginPending()">
-        <label for="password">Contraseña</label><input id="password" name="password" [(ngModel)]="password" type="password" maxlength="17" autocomplete="current-password" required [disabled]="loginPending()">
-        <button class="primary" type="submit" [disabled]="loginPending()">{{loginPending() ? 'Validando…' : 'Enviar'}}</button>
-      </form>
-      <p class="notice" role="status" aria-live="polite">{{accountNotice()}}</p>
-    }
+      <div class="account-login">
+        <p class="eyebrow">STUDIO F</p><h1>MI CUENTA</h1>
+        <p class="muted">Ingresa con los datos de tu cuenta de lealtad.</p>
+        <form class="account-form" (ngSubmit)="submitLogin()" [attr.aria-busy]="loginPending()">
+          <label for="username">Nombre de usuario</label><input id="username" name="username" [(ngModel)]="username" maxlength="48" autocomplete="username" required autofocus [disabled]="loginPending()">
+          <label for="password">Contraseña</label><input id="password" name="password" [(ngModel)]="password" type="password" maxlength="17" autocomplete="current-password" required [disabled]="loginPending()">
+          <button class="primary" type="submit" [disabled]="loginPending()">{{loginPending() ? 'Validando…' : 'Enviar'}}</button>
+        </form>
+        <p class="notice" role="status" aria-live="polite">{{accountNotice()}}</p>
+        <div class="demo-entry"><span>¿Solo quieres conocer el portal?</span><button class="secondary-button" type="button" (click)="enterDemo()">Entrar en modo demostración</button><small>No requiere credenciales y no consulta la API.</small></div>
+      </div>
+      }
   </section>
 } @else {
   <section class="panel content original-content" aria-live="polite">
@@ -73,6 +155,15 @@ export class AppComponent implements OnDestroy {
     acerca: 'acerca', beneficios: 'politicas', politicas: 'condiciones', establecimientos: 'establecimientos', contacto: 'contacto'
   };
   readonly slides = ['./img/slider/SLIDE4.png', './img/slider/SLIDE2.png', './img/slider/SLIDE3.png', './img/slider/SLIDE1.png'];
+  readonly accountNavigation: { id: AccountSection; label: string; icon: string }[] = [
+    { id: 'inicio', label: 'Inicio', icon: '⌂' },
+    { id: 'puntos', label: 'Mis puntos', icon: '☆' },
+    { id: 'movimientos', label: 'Mis movimientos', icon: '↔' },
+    { id: 'password', label: 'Cambiar contraseña', icon: '◇' },
+    { id: 'profile', label: 'Actualizar datos', icon: '○' },
+    { id: 'stores', label: 'Establecimientos', icon: '⌖' },
+    { id: 'rewards', label: 'Beneficios y premios', icon: '☆' }
+  ];
   readonly section = signal<Section>('inicio');
   readonly slide = signal(0);
   readonly controlsVisible = signal(false);
@@ -80,7 +171,18 @@ export class AppComponent implements OnDestroy {
   readonly sectionContent = signal('');
   readonly loadError = signal('');
   readonly accountNotice = signal('');
-  readonly accountUser = signal<{ name: string; points: string | null; pointsUnit: string | null; pointsNotice: string | null } | null>(null);
+  readonly accountUser = signal<{ name: string; points: string | null; pointsUnit: string | null; pointsNotice: string | null; availableSections: AccountSection[]; isDemo: boolean } | null>(null);
+  readonly accountSection = signal<AccountSection>('inicio');
+  readonly accountFeedback = signal('');
+  movementFrom = '';
+  movementTo = '';
+  readonly demoProfile = { firstName: 'Andrea', lastName: 'Ejemplo', address: 'Zona 10', phone: '', mobile: '5555-0101', email: 'andrea.demo@example.com' };
+  readonly demoMovements = [
+    { date: '2026-11-08', description: 'Compra de ejemplo', store: 'Tienda Studio F', charge: '—', credit: '180', balance: '1,250' },
+    { date: '2026-11-02', description: 'Compra de ejemplo', store: 'Tienda Studio F', charge: '—', credit: '320', balance: '1,070' },
+    { date: '2026-10-28', description: 'Canje de ejemplo', store: 'Tienda Studio F', charge: '250', credit: '—', balance: '750' },
+    { date: '2026-10-20', description: 'Compra de ejemplo', store: 'Tienda Studio F', charge: '—', credit: '1,000', balance: '1,000' }
+  ];
   readonly loginPending = signal(false);
   readonly contactNotice = signal('');
   username = '';
@@ -154,15 +256,33 @@ export class AppComponent implements OnDestroy {
         this.accountNotice.set(message);
         return;
       }
-      if (!this.isRecord(payload) || typeof payload['name'] !== 'string') {
+      if (
+        !this.isRecord(payload)
+        || typeof payload['name'] !== 'string'
+        || !Array.isArray(payload['availableSections'])
+      ) {
         throw new Error('La respuesta del servicio no tiene el formato esperado.');
+      }
+      const availableSections: AccountSection[] = [];
+      for (const section of payload['availableSections']) {
+        if (!this.isAccountSection(section)) {
+          throw new Error('La respuesta del servicio contiene una sección desconocida.');
+        }
+        availableSections.push(section);
+      }
+      const points = typeof payload['points'] === 'string' ? payload['points'] : null;
+      if (!availableSections.includes('inicio') || (availableSections.includes('puntos') && points === null)) {
+        throw new Error('La respuesta del servicio contiene secciones sin datos asociados.');
       }
       this.accountUser.set({
         name: payload['name'],
-        points: typeof payload['points'] === 'string' ? payload['points'] : null,
+        points,
         pointsUnit: typeof payload['pointsUnit'] === 'string' ? payload['pointsUnit'] : null,
-        pointsNotice: typeof payload['pointsNotice'] === 'string' ? payload['pointsNotice'] : null
+        pointsNotice: typeof payload['pointsNotice'] === 'string' ? payload['pointsNotice'] : null,
+        availableSections,
+        isDemo: false
       });
+      this.accountSection.set('inicio');
       this.password = '';
     } catch (error) {
       console.error('Error al iniciar sesión:', error);
@@ -172,8 +292,27 @@ export class AppComponent implements OnDestroy {
     }
   }
 
+  enterDemo(): void {
+    this.accountNotice.set('');
+    this.password = '';
+    this.accountSection.set('inicio');
+    this.accountFeedback.set('');
+    this.resetDemoData();
+    this.accountUser.set({
+      name: 'Andrea Ejemplo',
+      points: '1,250',
+      pointsUnit: 'puntos',
+      pointsNotice: null,
+      availableSections: this.accountNavigation.map(item => item.id),
+      isDemo: true
+    });
+  }
+
   logout(): void {
     this.accountUser.set(null);
+    this.accountSection.set('inicio');
+    this.accountFeedback.set('');
+    this.resetDemoData();
     this.username = '';
     this.password = '';
     this.accountNotice.set('');
@@ -181,6 +320,59 @@ export class AppComponent implements OnDestroy {
 
   private isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null;
+  }
+
+  private isAccountSection(value: unknown): value is AccountSection {
+    return typeof value === 'string' && this.accountNavigation.some(item => item.id === value);
+  }
+
+  visibleAccountNavigation(): typeof this.accountNavigation {
+    const account = this.accountUser();
+    if (!account) return [];
+    return this.accountNavigation.filter(item => account.availableSections.includes(item.id));
+  }
+
+  openAccountSection(section: AccountSection): void {
+    const account = this.accountUser();
+    if (!account?.availableSections.includes(section)) return;
+    this.accountSection.set(section);
+    this.accountFeedback.set('');
+  }
+
+  accountSectionTitle(): string {
+    return this.accountNavigation.find(item => item.id === this.accountSection())?.label ?? 'Mi cuenta';
+  }
+
+  filteredMovements(): typeof this.demoMovements {
+    return this.demoMovements.filter(movement =>
+      (!this.movementFrom || movement.date >= this.movementFrom)
+      && (!this.movementTo || movement.date <= this.movementTo)
+    );
+  }
+
+  applyMovementFilter(): void { this.accountFeedback.set(''); }
+  clearMovementFilter(): void {
+    this.movementFrom = '';
+    this.movementTo = '';
+  }
+
+  submitDemoProfile(): void {
+    this.accountFeedback.set('Cambios de ejemplo aplicados solo a este formulario; no se enviaron ni guardaron.');
+  }
+
+  submitDemoPassword(): void {
+    this.accountFeedback.set('Modo demostración: no se modificó ni se guardó ninguna contraseña.');
+  }
+
+  private resetDemoData(): void {
+    this.demoProfile.firstName = 'Andrea';
+    this.demoProfile.lastName = 'Ejemplo';
+    this.demoProfile.address = 'Zona 10';
+    this.demoProfile.phone = '';
+    this.demoProfile.mobile = '5555-0101';
+    this.demoProfile.email = 'andrea.demo@example.com';
+    this.movementFrom = '';
+    this.movementTo = '';
   }
   submitContact(): void { this.contactNotice.set('Los campos son válidos. La consulta no se envió porque el servicio original no está conectado.'); }
 }
